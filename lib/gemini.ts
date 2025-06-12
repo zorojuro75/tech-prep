@@ -119,10 +119,6 @@ function validateQuestions(
     throw new Error("Response is not an array");
   }
 
-  if (questions.length !== expectedCount) {
-    throw new Error(`Expected ${expectedCount} questions, got ${questions.length}`);
-  }
-
   for (const [index, q] of questions.entries()) {
     if (!q.question || typeof q.question !== "string") {
       throw new Error(`Question ${index + 1} missing question text`);
@@ -169,41 +165,55 @@ export async function generateFeedback(testResult: TestResult): Promise<string> 
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY!);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-  // Construct the prompt
+  const questionBreakdown = testResult.questions.map((q, i) => {
+    const userAnswer = testResult.userAnswers[i];
+    return `
+    Question ${i + 1}:
+    - Question: ${q.question}
+    ${q.codeSnippet ? `- Code Snippet:\n${q.codeSnippet}` : ''}
+    - Correct Answer: ${q.options[q.correctAnswer]}
+    - User's Answer: ${userAnswer !== null ? q.options[userAnswer] : 'Unanswered'}
+    ${q.explanation ? `- Explanation: ${q.explanation}` : ''}
+    `.trim();
+  }).join('\n\n');
+
   const prompt = `
-  You are a technical career coach helping a developer prepare for job interviews. 
-  The candidate just completed a ${testResult.level} level ${testResult.role} assessment and scored ${testResult.score}% (${testResult.correct} out of ${testResult.total}).
+You are a senior technical career coach mentoring a software developer who is preparing for job interviews.
 
-  Here are the test details:
-  ${testResult.questions.map((q, index) => `
-    Question ${index + 1}: ${q.question}
-    ${q.codeSnippet ? `Code Snippet:\n${q.codeSnippet}` : ''}
-    Correct Answer: ${q.options[q.correctAnswer]}
-    User's Answer: ${testResult.userAnswers[index] !== null ? q.options[testResult.userAnswers[index]!] : 'Unanswered'}
-    ${q.explanation ? `Explanation: ${q.explanation}` : ''}
-  `).join('\n')}
+The candidate has completed a "${testResult.level}" level assessment for the "${testResult.role}" role and scored ${testResult.score}% (${testResult.correct} out of ${testResult.total} questions correct).
 
-  Generate personalized feedback including:
-  1. Performance summary in 2-3 sentences
-  2. Key strengths (based on correctly answered questions)
-  3. Key weaknesses (based on incorrect/unanswered questions)
-  4. Improvement suggestions (specific topics to study, resources, practice tips)
-  5. Career roadmap (timeline with milestones for skill improvement and job search)
+Below is the detailed breakdown of their test:
+${questionBreakdown}
 
-  Structure the feedback using these exact section headings:
-  - Performance Summary
-  - Strengths
-  - Weaknesses
-  - Improvement Suggestions
-  - Career Roadmap
+Please provide **detailed, constructive, and personalized feedback** with the following sections:
 
-  Be encouraging but honest. For weaknesses, focus on 2-3 critical areas. For the roadmap, provide a realistic 3-6 month plan.
-  `;
+**Performance Summary**
+- Offer an honest and encouraging overview of the candidate's test performance in 2-3 sentences.
+
+**Strengths**
+- Identify technical areas and skills the candidate performed well in.
+- Relate correct answers to real-world tasks or competencies.
+
+**Weaknesses**
+- Highlight 2-3 areas the candidate struggled with (incorrect or unanswered questions).
+- Provide short, understandable explanations about the gaps in understanding.
+
+**Improvement Suggestions**
+- Recommend specific technical topics the candidate should study.
+- Provide at least 2 *free or open-source* online resources for each topic.
+- Suggest 2–3 **realistic and relevant mini-projects** the candidate can build to reinforce their learning, each with a title and short description.
+  Example: "Build a RESTful API for a Bookstore" – A Node.js/Express backend with CRUD operations and authentication.
+
+**Career Roadmap**
+- Provide a 3–6 month milestone-based plan with actionable steps to prepare for job applications.
+- Include when to revise core concepts, build projects, contribute to open source, prepare a resume/portfolio, and start applying.
+
+Use markdown-style formatting for clear sectioning and readability. Be supportive but direct. Encourage growth and consistency.
+`;
 
   try {
-    const result: GenerateContentResult = await model.generateContent(prompt);
-    const response = result.response;
-    return response.text();
+    const result = await model.generateContent(prompt);
+    return result.response.text();
   } catch (error) {
     console.error("Error generating feedback:", error);
     throw new Error("Failed to generate feedback. Please try again later.");

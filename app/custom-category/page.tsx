@@ -14,6 +14,7 @@ export default function CustomCategoryPage() {
   const router = useRouter();
   const [category, setCategory] = useState("");
   const [level, setLevel] = useState<"fresher" | "junior" | "mid-level" | "senior">("junior");
+  const [numberOfQuestions, setQuestions] = useState<number>(40);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,7 +41,7 @@ export default function CustomCategoryPage() {
         category,
         level,
         "mcq", // Default to MCQ for custom categories
-        10 // Generate 40 questions
+        numberOfQuestions,
       );
 
       // Store in session storage
@@ -65,7 +66,7 @@ export default function CustomCategoryPage() {
   };
 
   return (
-    <div className="container max-w-2xl py-12">
+    <div className="container max-w-4xl py-12 mx-auto">
       <Card className="border border-gray-200 shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
@@ -104,6 +105,21 @@ export default function CustomCategoryPage() {
                 onChange={(value) => setLevel(value as "fresher" | "junior" | "mid-level" | "senior")}
                 label=""
                 className="w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="questions" className="text-base">
+                Number of Questions (default is 40):
+              </Label>
+              <Input
+                id="questions"
+                type="number"
+                min={1}
+                max={50}
+                value={numberOfQuestions}
+                onChange={(e) => setQuestions(Number(e.target.value))}
+                disabled={loading}
+                className="h-12 text-base"
               />
             </div>
 

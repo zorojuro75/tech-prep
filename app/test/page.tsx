@@ -205,7 +205,7 @@ export default function TestPage() {
       </header>
 
       {/* Test Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container max-w-4xl mx-auto px-4 py-8">
         {questions.length > 0 && currentQuestionIndex < questions.length ? (
           <QuestionCard
             question={questions[currentQuestionIndex].question}
@@ -223,7 +223,7 @@ export default function TestPage() {
         )}
 
         {/* Navigation Controls */}
-        <div className="mt-8 flex justify-between max-w-3xl mx-auto">
+        <div className="mt-8 flex justify-between max-w-4xl mx-auto">
           <Button
             variant="outline"
             onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}

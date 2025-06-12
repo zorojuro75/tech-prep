@@ -41,7 +41,7 @@ const QuestionCard = ({
   };
 
   return (
-    <Card className="w-full max-w-3xl border border-gray-200 shadow-lg">
+    <Card className="w-full max-w-4xl border border-gray-200 shadow-lg">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <CardTitle className="text-xl font-semibold text-gray-800">
